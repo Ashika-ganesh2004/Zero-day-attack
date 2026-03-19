@@ -1,12 +1,15 @@
-from flask import Flask, jsonify, request, session
-from flask_cors import CORS
-import random
-import datetime
+from flask import Flask, jsonify, request, session, render_template
 
 app = Flask(__name__)
-app.secret_key = "super_secret_key"
-CORS(app, supports_credentials=True)
 
+@app.route("/")
+def home():
+    return render_template("index.html")
+
+# your other routes below
+@app.route("/predict", methods=["POST"])
+def predict():
+    ...
 # =====================================================
 # MOCK DATABASE
 # =====================================================
