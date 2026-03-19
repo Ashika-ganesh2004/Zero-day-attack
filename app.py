@@ -12,7 +12,7 @@ app = Flask(__name__)
 app.secret_key = "super_secret_key"
 
 # =====================================================
-# LOAD MODEL (SAFE PATH)
+# LOAD MODEL (SAFE)
 # =====================================================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -21,15 +21,15 @@ model_path = os.path.join(BASE_DIR, "model.pkl")
 try:
     model = joblib.load(model_path)
 except:
-    model = None  # Prevent crash if model fails
+    model = None
 
 # =====================================================
-# HOME ROUTE (FIXES ERROR)
+# HOME ROUTE (SHOW UI)
 # =====================================================
 
 @app.route("/")
 def home():
-    return "Zero-Day Attack Detection API is Running 🚀"
+    return render_template("index.html")
 
 # =====================================================
 # MOCK DATABASE
@@ -84,42 +84,6 @@ def live_traffic():
     return jsonify(traffic)
 
 
-@app.route("/api/attack-logs")
-def attack_logs():
-    logs = [
-        {
-            "time": datetime.datetime.now().strftime("%H:%M:%S"),
-            "source_ip": f"10.0.0.{random.randint(1,255)}",
-            "type": random.choice(["DDoS", "Port Scan", "Malware"]),
-            "severity": random.choice(["LOW", "MEDIUM", "HIGH"])
-        }
-        for _ in range(8)
-    ]
-    return jsonify(logs)
-
-
-@app.route("/api/threat-analysis")
-def threat_analysis():
-    normal = random.randint(80, 150)
-    suspicious = random.randint(20, 60)
-    malicious = random.randint(5, 40)
-
-    if malicious > 25:
-        level = "HIGH"
-    elif malicious > 15:
-        level = "MEDIUM"
-    else:
-        level = "LOW"
-
-    return jsonify({
-        "total_requests": normal + suspicious + malicious,
-        "normal": normal,
-        "suspicious": suspicious,
-        "malicious": malicious,
-        "threat_level": level
-    })
-
-
 @app.route("/api/risk-assessment")
 def risk_assessment():
     score = random.randint(10, 95)
@@ -135,71 +99,6 @@ def risk_assessment():
         "risk_score": score,
         "risk_level": level,
         "confidence": random.randint(80, 98)
-    })
-
-
-@app.route("/api/model-status")
-def model_status():
-    return jsonify({
-        "model_name": "Zero-Day Detection Model",
-        "accuracy": round(random.uniform(90, 98), 2),
-        "f1_score": round(random.uniform(88, 96), 2),
-        "status": admin_settings["model_status"],
-        "last_trained": "2026-01-28"
-    })
-
-
-@app.route("/api/model-explainability")
-def model_explainability():
-    features = {
-        "Packet Size": random.randint(15, 30),
-        "IP Reputation": random.randint(10, 25),
-        "Protocol Type": random.randint(10, 20),
-        "Connection Rate": random.randint(10, 25),
-        "Time Behavior": random.randint(5, 20)
-    }
-
-    total = sum(features.values())
-    importance = {k: round((v / total) * 100, 1) for k, v in features.items()}
-
-    return jsonify({
-        "prediction": random.choice(["Normal", "Attack"]),
-        "risk_score": random.randint(60, 95),
-        "confidence": random.randint(85, 98),
-        "feature_importance": importance
-    })
-
-
-@app.route("/api/alerts")
-def alerts():
-    alerts_list = [
-        {
-            "time": datetime.datetime.now().strftime("%H:%M:%S"),
-            "ip": f"172.16.0.{random.randint(1,255)}",
-            "severity": random.choice(["LOW", "MEDIUM", "HIGH", "CRITICAL"]),
-            "risk_score": random.randint(30, 95)
-        }
-        for _ in range(6)
-    ]
-    return jsonify(alerts_list)
-
-
-@app.route("/api/reports")
-def reports():
-    return jsonify({
-        "daily_attacks": random.randint(50, 200),
-        "weekly_attacks": random.randint(300, 1000),
-        "blocked_ips": random.randint(20, 100)
-    })
-
-
-@app.route("/api/system-health")
-def system_health():
-    return jsonify({
-        "cpu_usage": random.randint(20, 80),
-        "memory_usage": random.randint(30, 90),
-        "disk_usage": random.randint(40, 85),
-        "status": "HEALTHY"
     })
 
 # =====================================================
