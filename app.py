@@ -1,15 +1,16 @@
 from flask import Flask, jsonify, request, session, render_template
+import random
+import datetime
+import os
+import joblib
+
+# ✅ ADD HERE
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+model_path = os.path.join(BASE_DIR, "model.pkl")
+
+model = joblib.load(model_path)
 
 app = Flask(__name__)
-
-@app.route("/")
-def home():
-    return render_template("index.html")
-
-# your other routes below
-@app.route("/predict", methods=["POST"])
-def predict():
-    ...
 # =====================================================
 # MOCK DATABASE
 # =====================================================
