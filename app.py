@@ -4,13 +4,33 @@ import datetime
 import os
 import joblib
 
-# ✅ ADD HERE
+# =====================================================
+# APP SETUP
+# =====================================================
+
+app = Flask(__name__)
+app.secret_key = "super_secret_key"
+
+# =====================================================
+# LOAD MODEL (SAFE PATH)
+# =====================================================
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 model_path = os.path.join(BASE_DIR, "model.pkl")
 
-model = joblib.load(model_path)
+try:
+    model = joblib.load(model_path)
+except:
+    model = None  # Prevent crash if model fails
 
-app = Flask(__name__)
+# =====================================================
+# HOME ROUTE (FIXES ERROR)
+# =====================================================
+
+@app.route("/")
+def home():
+    return "Zero-Day Attack Detection API is Running 🚀"
+
 # =====================================================
 # MOCK DATABASE
 # =====================================================
@@ -36,12 +56,10 @@ admin_settings = {
 def is_admin():
     return "admin" in session
 
-
 # =====================================================
-# PUBLIC SIDEBAR APIs
+# PUBLIC APIs
 # =====================================================
 
-# -------- DASHBOARD --------
 @app.route("/api/dashboard")
 def dashboard():
     return jsonify({
@@ -52,7 +70,6 @@ def dashboard():
     })
 
 
-# -------- LIVE TRAFFIC --------
 @app.route("/api/live-traffic")
 def live_traffic():
     traffic = [
@@ -67,7 +84,6 @@ def live_traffic():
     return jsonify(traffic)
 
 
-# -------- ATTACK LOGS --------
 @app.route("/api/attack-logs")
 def attack_logs():
     logs = [
@@ -82,7 +98,6 @@ def attack_logs():
     return jsonify(logs)
 
 
-# -------- THREAT ANALYSIS --------
 @app.route("/api/threat-analysis")
 def threat_analysis():
     normal = random.randint(80, 150)
@@ -105,7 +120,6 @@ def threat_analysis():
     })
 
 
-# -------- RISK ASSESSMENT --------
 @app.route("/api/risk-assessment")
 def risk_assessment():
     score = random.randint(10, 95)
@@ -124,7 +138,6 @@ def risk_assessment():
     })
 
 
-# -------- MODEL STATUS --------
 @app.route("/api/model-status")
 def model_status():
     return jsonify({
@@ -136,7 +149,6 @@ def model_status():
     })
 
 
-# -------- MODEL EXPLAINABILITY --------
 @app.route("/api/model-explainability")
 def model_explainability():
     features = {
@@ -158,7 +170,6 @@ def model_explainability():
     })
 
 
-# -------- ALERTS --------
 @app.route("/api/alerts")
 def alerts():
     alerts_list = [
@@ -173,7 +184,6 @@ def alerts():
     return jsonify(alerts_list)
 
 
-# -------- REPORTS --------
 @app.route("/api/reports")
 def reports():
     return jsonify({
@@ -183,7 +193,6 @@ def reports():
     })
 
 
-# -------- SYSTEM HEALTH --------
 @app.route("/api/system-health")
 def system_health():
     return jsonify({
@@ -193,14 +202,17 @@ def system_health():
         "status": "HEALTHY"
     })
 
-
 # =====================================================
-# ADMIN AUTHENTICATION (PROTECTED ROUTES)
+# ADMIN ROUTES
 # =====================================================
 
 @app.route("/api/admin/login", methods=["POST"])
 def admin_login():
     data = request.get_json()
+
+    if not data:
+        return jsonify({"success": False}), 400
+
     username = data.get("username")
     password = data.get("password")
 
@@ -222,69 +234,9 @@ def admin_logout():
     return jsonify({"success": True})
 
 
-@app.route("/api/admin/settings")
-def get_settings():
-    if not is_admin():
-        return jsonify({"error": "Unauthorized"}), 401
-    return jsonify(admin_settings)
-
-
-@app.route("/api/admin/update-threshold", methods=["POST"])
-def update_threshold():
-    if not is_admin():
-        return jsonify({"error": "Unauthorized"}), 401
-
-    data = request.get_json()
-    admin_settings["normal_threshold"] = float(data.get("normal_threshold", 0.6))
-    admin_settings["suspicious_threshold"] = float(data.get("suspicious_threshold", 0.8))
-
-    return jsonify({"message": "Thresholds updated successfully"})
-
-
-@app.route("/api/admin/update-model", methods=["POST"])
-def update_model():
-    if not is_admin():
-        return jsonify({"error": "Unauthorized"}), 401
-
-    data = request.get_json()
-    admin_settings["model_status"] = data.get("status", "ACTIVE")
-
-    return jsonify({"message": "Model updated successfully"})
-
-
-@app.route("/api/admin/users", methods=["POST"])
-def add_user():
-    if not is_admin():
-        return jsonify({"error": "Unauthorized"}), 401
-
-    data = request.get_json()
-
-    admin_settings["users"].append({
-        "username": data.get("username"),
-        "role": data.get("role")
-    })
-
-    return jsonify({"users": admin_settings["users"]})
-
-
-@app.route("/api/admin/users/<username>", methods=["DELETE"])
-def delete_user(username):
-    if not is_admin():
-        return jsonify({"error": "Unauthorized"}), 401
-
-    admin_settings["users"] = [
-        user for user in admin_settings["users"]
-        if user["username"] != username
-    ]
-
-    return jsonify({"users": admin_settings["users"]})
-
-
 # =====================================================
 # RUN
 # =====================================================
-
-import os
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
