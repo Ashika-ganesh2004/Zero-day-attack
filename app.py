@@ -15,46 +15,28 @@ app.secret_key = "super_secret_key"
 # LOAD MODEL (SAFE)
 # =====================================================
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-model_path = os.path.join(BASE_DIR, "model.pkl")
+model = None
 
 try:
-    model = joblib.load(model_path)
-except:
-    model = None
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(BASE_DIR, "model.pkl")
+
+    if os.path.exists(model_path):
+        model = joblib.load(model_path)
+        print("✅ Model loaded")
+    else:
+        print("⚠️ model.pkl not found")
+
+except Exception as e:
+    print("❌ Model error:", str(e))
 
 # =====================================================
-# HOME ROUTE (SHOW UI)
+# HOME ROUTE (UI)
 # =====================================================
 
 @app.route("/")
 def home():
     return render_template("index.html")
-
-# =====================================================
-# MOCK DATABASE
-# =====================================================
-
-ADMIN_USERS = {
-    "admin": "admin123"
-}
-
-admin_settings = {
-    "normal_threshold": 0.6,
-    "suspicious_threshold": 0.8,
-    "model_status": "ACTIVE",
-    "users": [
-        {"username": "admin", "role": "admin"},
-        {"username": "analyst", "role": "user"}
-    ]
-}
-
-# =====================================================
-# HELPER FUNCTION
-# =====================================================
-
-def is_admin():
-    return "admin" in session
 
 # =====================================================
 # PUBLIC APIs
@@ -66,43 +48,63 @@ def dashboard():
         "total_traffic": random.randint(1000, 5000),
         "attacks_detected": random.randint(50, 200),
         "risk_level": random.choice(["LOW", "MEDIUM", "HIGH"]),
-        "model_status": admin_settings["model_status"]
+        "model_status": "ACTIVE"
     })
-
 
 @app.route("/api/live-traffic")
 def live_traffic():
-    traffic = [
+    data = [
         {
             "ip": f"192.168.1.{random.randint(1,255)}",
             "packets": random.randint(10, 500),
-            "protocol": random.choice(["TCP", "UDP", "ICMP"]),
             "status": random.choice(["Normal", "Suspicious", "Malicious"])
         }
         for _ in range(10)
     ]
-    return jsonify(traffic)
-
+    return jsonify(data)
 
 @app.route("/api/risk-assessment")
-def risk_assessment():
+def risk():
     score = random.randint(10, 95)
-
-    if score > 70:
-        level = "HIGH"
-    elif score > 40:
-        level = "MEDIUM"
-    else:
-        level = "LOW"
-
     return jsonify({
         "risk_score": score,
-        "risk_level": level,
-        "confidence": random.randint(80, 98)
+        "level": "HIGH" if score > 70 else "MEDIUM" if score > 40 else "LOW"
     })
 
 # =====================================================
-# ADMIN ROUTES
+# PREDICTION API
+# =====================================================
+
+@app.route("/predict", methods=["POST"])
+def predict():
+    try:
+        data = request.get_json()
+
+        features = data.get("features")
+
+        # Convert input string → list
+        features = [float(x) for x in features.split(",")]
+
+        # Dummy prediction (safe)
+        prediction = random.choice(["Normal", "Attack"])
+        risk_score = random.randint(50, 95)
+
+        explanation = [
+            {"feature": f"Feature {i+1}", "importance": random.random()}
+            for i in range(5)
+        ]
+
+        return jsonify({
+            "prediction": prediction,
+            "risk_score": risk_score,
+            "explanation": explanation
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# =====================================================
+# ADMIN (OPTIONAL)
 # =====================================================
 
 @app.route("/api/admin/login", methods=["POST"])
@@ -112,26 +114,11 @@ def admin_login():
     if not data:
         return jsonify({"success": False}), 400
 
-    username = data.get("username")
-    password = data.get("password")
-
-    if username in ADMIN_USERS and ADMIN_USERS[username] == password:
-        session["admin"] = username
+    if data.get("username") == "admin" and data.get("password") == "admin123":
+        session["admin"] = "admin"
         return jsonify({"success": True})
 
     return jsonify({"success": False}), 401
-
-
-@app.route("/api/admin/check")
-def admin_check():
-    return jsonify({"logged_in": is_admin()})
-
-
-@app.route("/api/admin/logout", methods=["POST"])
-def admin_logout():
-    session.pop("admin", None)
-    return jsonify({"success": True})
-
 
 # =====================================================
 # RUN
